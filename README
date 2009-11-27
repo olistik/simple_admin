@@ -1,0 +1,95 @@
+# Genesys
+rails myapp
+cd myapp/
+
+# Configure authentication
+ruby script/generate devise_install
+config/environments/development.rb:
+	config.action_mailer.default_url_options = {:host => 'localhost:3000'}
+ruby script/generate devise User
+ruby script/generate devise Admin
+
+# Create application's Models
+./script/generate model Domain name:string
+./script/generate model Mailbox name:string capacity:integer domain_id:integer
+./script/generate migration create_domains_users
+app/models/user.rb:
+  has_and_belongs_to_many :domains
+app/models/domain.rb:
+  has_and_belongs_to_many :users
+  has_many :mailboxes
+app/models/mailbox.rb:
+  belongs_to :domain
+
+# Apply db modifications
+rake db:migrate
+
+# Install ActiveScaffold (for models administration)
+./script/plugin install git://github.com/activescaffold/active_scaffold.git
+./script/plugin install git://github.com/ewildgoose/render_component.git -r rails-2.3
+./script/generate nifty_layout
+app/views/layouts/application.html.erb:
+	<%= javascript_include_tag :defaults %>
+	<%= active_scaffold_includes %>
+
+# Apply data administration/authentication
+./script/generate controller User
+./script/generate controller Domain
+./script/generate controller Mailbox
+app/controllers/user_controller.rb:
+	before_filter :authenticate_admin!
+  active_scaffold
+  def to_label
+    email
+  end
+app/controllers/domain_controller.rb:
+	before_filter :authenticate_admin!
+  active_scaffold
+  def to_label
+    name
+  end
+app/controllers/mailbox_controller.rb:
+	before_filter :authenticate_admin!
+  active_scaffold
+  def to_label
+    name
+  end
+config/routes.rb:
+	map.resources :users, :active_scaffold => true
+	map.resources :domain, :active_scaffold => true
+	map.resources :mailbox, :active_scaffold => true
+
+rm public/index.html
+# default page
+config/routes.rb:
+  map.root :controller => :domain
+
+# Create initial admin account
+db/seeds.rb:
+	Admin.create! :email => "admin@local.com", :password => "admin00"
+	Admin.first.confirm!
+rake db:seed
+
+# Add logout link
+app/views/layouts/application.html.erb:
+	<%= link_to("logout", destroy_admin_session_path) if admin_signed_in? -%>
+
+# Start the server
+./script/server
+
+# Browse
+http://localhost:3000
+
+# Add fields remind to models
+	annotate
+
+# Hf
+./script/console
+# like this
+Domain.find_by_name("mydomain").mailboxes.each do |mailbox|
+  mailbox.capacity = 500
+	mailbox.save
+end
+# or equivalently
+mailboxes = Domain.find_by_name("mydomain").mailboxes
+mailboxes.each {|mailbox| mailbox.update_attribute :capacity, 500}

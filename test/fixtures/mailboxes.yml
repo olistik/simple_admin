@@ -1,0 +1,23 @@
+# == Schema Information
+#
+# Table name: mailboxes
+#
+#  id         :integer         not null, primary key
+#  name       :string(255)
+#  capacity   :integer
+#  domain_id  :integer
+#  created_at :datetime
+#  updated_at :datetime
+#
+
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+one:
+  name: MyString
+  capacity: 1
+  domain_id: 1
+
+two:
+  name: MyString
+  capacity: 1
+  domain_id: 1
